@@ -2,9 +2,9 @@
 
 The TvMaze Scraper tool consists of the following components:
 
-* Elasticsearch. 
-   This is the database of the application.  
-   It can be accessed on: http://elastic:rtl@localhost:9200
+* Elasticsearch.  
+   Elasticsearch is used as the persistent data storage of the application.
+   It can be accessed on the following url: http://elastic:rtl@localhost:9200
 
 *  Logstash.  
    A Logstash pipeline is used to import all tv shows and cast. 
