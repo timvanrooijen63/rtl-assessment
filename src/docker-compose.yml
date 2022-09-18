@@ -1,0 +1,75 @@
+version: '3.4'
+
+services:
+  locationsearchweb:
+    image: show-webapi
+    build:
+      context: .
+      dockerfile: Rtl.WebApi/Dockerfile
+    ports:
+      - 9001:80
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Docker"
+    networks:
+      - rtl
+   
+  elasticsearch:
+    build:
+      context: elasticsearch/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - type: bind
+        source: ./elasticsearch/config/elasticsearch.yml
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+        read_only: true
+      - type: volume
+        source: elasticsearch
+        target: /usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      ELASTIC_PASSWORD: rtl
+      discovery.type: single-node
+    networks:
+      - rtl
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl http://elastic:rtl@localhost:9200 | grep -q 'You Know, for Search'",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
+  logstash:
+    build:
+      context: logstash/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - type: bind
+        source: ./logstash/config/logstash.yml
+        target: /usr/share/logstash/config/logstash.yml
+        read_only: true
+      - type: bind
+        source: ./logstash/pipeline
+        target: /usr/share/logstash/pipeline
+        read_only: true
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    networks:
+      - rtl
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+networks:
+  rtl:
+    driver: bridge
+
+volumes:
+  elasticsearch:
